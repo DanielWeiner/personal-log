@@ -13,7 +13,7 @@ This project was built and tested on Arch Linux, so your mileage may vary on oth
 
 ## Installation
 ```bash
-git clone http://github.com/DanielWeiner/personal-log.git
+git clone https://github.com/DanielWeiner/personal-log.git
 cd personal-log
 makepkg -si .
 ```
