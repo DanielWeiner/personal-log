@@ -1,0 +1,36 @@
+#!/bin/bash
+set -euo pipefail
+
+log_tmp="$(mktemp /tmp/personal-log.tmp.XXXXXX)"
+trap 'rm -f "$log_tmp"' EXIT
+
+log_file="$PERSONAL_LOG"
+mkdir -p "$(dirname "$log_file")"
+touch "$log_file"
+timestamp=
+datestamp=
+canonical_timezone=
+input_text="$*"
+
+vim -c "normal I$input_text" -y "$log_tmp"
+cat "$log_tmp" | sed -zE 's/^\s+|\s+$//g' | tee "$log_tmp" >/dev/null 2>&1
+
+if ! grep -q '[^[:space:]]' "$log_tmp"; then
+    echo "No log entry created." >&2
+    exit 1
+fi
+
+canonical_timezone="$(timedatectl show -p Timezone --value)"
+timestamp="$(date +"[%-l:%M %p | %Z | $canonical_timezone]")"
+datestamp="$(date +'[[ %A, %B %d %Y ]]')"
+
+{
+    if ! tac "$log_file" | grep -Fq "$datestamp" 2>/dev/null; then
+        printf '\n=== %s ===\n' "$datestamp"
+    fi
+
+    printf '\n%s\n' "$timestamp" 
+
+    cat "$log_tmp"
+} | tee -a "$log_file"
+exit 0
