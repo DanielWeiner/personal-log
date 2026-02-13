@@ -11,6 +11,13 @@ A command-line tool to jot things down. Use it for notes, journaling, anything y
 ## Note
 This project was built and tested on Arch Linux, so your mileage may vary on other platforms. It should work on any Unix-like system with the above dependencies, but I haven't tested it on anything else. You might need to manually install the scripts and set the `PERSONAL_LOG` environment variable if you're not on Arch Linux.
 
+## Installation
+```bash
+git clone http://github.com/DanielWeiner/personal-log.git
+cd personal-log
+makepkg -si .
+```
+
 ## Usage
 ### Adding a log entry
 ```bash
@@ -32,13 +39,6 @@ readlog
 ```
 
 This opens the personal log file in `less`, scrolled to the end. You may also append `less` arguments to the command.
-
-## Installation
-```bash
-git clone http://github.com/DanielWeiner/personal-log.git
-cd personal-log
-makepkg -si .
-```
 
 ## Disclaimer
 
