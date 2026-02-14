@@ -6,6 +6,7 @@ log_file="$PERSONAL_LOG"
 timestamp=
 datestamp=
 input_text="$*"
+modified_time=
 
 trap 'rm -f "$log_tmp"' EXIT
 mkdir -p "$(dirname "$log_file")"
@@ -30,12 +31,21 @@ function get_timezone() {
     fi
 }
 
-# Vim in easy (evim) mode is more user-friendly for quick text entry.
-# The argumens are input as text to the beginning of the file, 
-# so that when you type "personal-log I went to the zoo", it doesn't get lost.
+
+# The arguments are added as text to the beginning of the file, so that when you type 
+# "personal-log I went to the zoo", it doesn't get lost.
 # It felt more natural to me for the text to follow "personal-log" rather than hit enter before typing. 
 # I found myself accidentally doing that in the prototype version, which did not consume the arguments as text.
-vim -c "normal I$input_text" -y "$log_tmp"
+echo "$input_text" > "$log_tmp"
+modified_time="$(stat -c %Y "$log_tmp")"
+
+# Vim in easy (evim) mode is more user-friendly for quick text entry.
+vim -c "normal Go" -y "$log_tmp"
+
+if [ "$(stat -c %Y "$log_tmp")" -eq "$modified_time" ]; then
+    echo "No log entry created." >&2
+    exit 1
+fi
 
 # Strip leading and trailing whitespace, and add a newline at the end.
 cat "$log_tmp" \
