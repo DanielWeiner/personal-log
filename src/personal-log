@@ -87,7 +87,6 @@ datestamp="$(date +'[[ %A, %B %d %Y ]]')"
         [ -s "$log_file" ] && printf '\n'
         printf '=== %s ===\n' "$datestamp"
     fi
-    echo "date done"
 
     # Always output the timestamp. It's good to know what time of day you made the entry
     printf '\n%s\n' "$timestamp" 
