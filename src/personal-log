@@ -13,7 +13,11 @@ canonical_timezone=
 input_text="$*"
 
 vim -c "normal I$input_text" -y "$log_tmp"
-cat "$log_tmp" | sed -zE 's/^\s+|\s+$//g' | tee "$log_tmp" >/dev/null 2>&1
+
+cat "$log_tmp" \
+    | sed -zE 's/^\s*//g' \
+    | sed -zE 's/\s*$/\n/g' \
+    | tee "$log_tmp" >/dev/null 2>&1
 
 if ! grep -q '[^[:space:]]' "$log_tmp"; then
     echo "No log entry created." >&2
