@@ -3,8 +3,6 @@ A command-line tool to jot things down. Use it for notes, journaling, anything y
 
 ## Depenencies
 - [less](https://www.gnu.org/software/less/)
-- [date](https://www.gnu.org/software/coreutils/)
-- [timedatectl](https://www.freedesktop.org/wiki/Software/systemd/timedated/)
 - [vim](https://www.vim.org/)
 - [makepkg](https://wiki.archlinux.org/title/Makepkg) (for installation)
 

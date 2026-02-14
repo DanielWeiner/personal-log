@@ -2,39 +2,67 @@
 set -euo pipefail
 
 log_tmp="$(mktemp /tmp/personal-log.tmp.XXXXXX)"
-trap 'rm -f "$log_tmp"' EXIT
-
 log_file="$PERSONAL_LOG"
-mkdir -p "$(dirname "$log_file")"
-touch "$log_file"
 timestamp=
 datestamp=
-canonical_timezone=
 input_text="$*"
 
+trap 'rm -f "$log_tmp"' EXIT
+mkdir -p "$(dirname "$log_file")"
+touch "$log_file"
+
+# IANA timezone names give you a rough idea of where you are, even within a single timezone.
+# In a personal log, you might want to remember where you were.
+function get_timezone() {
+    # in all cases, print the short timezone code first.
+    printf '%s' "$(date +"%Z")"
+
+    # some systems symlink /etc/localtime to the actual timezone file, like Arch
+    if [ -L /etc/localtime ]; then
+        printf ' | %s' "$(readlink -f /etc/localtime | cut -d/ -f5-)"
+    # some systems have the timezone in /etc/timezone, like Debian distros
+    elif [ -f /etc/timezone ]; then
+        printf ' | %s' "$(cat /etc/timezone)"
+    # if the above methods fail, then see if systemd can tell us
+    elif command -v timedatectl >/dev/null 2>&1; then
+        printf ' | %s' "$(timedatectl show -p Timezone --value)"
+    # otherwise, the short timezone will have to do
+    fi
+}
+
+# Vim in easy (evim) mode is more user-friendly for quick text entry.
+# The argumens are input as text to the beginning of the file, 
+# so that when you type "personal-log I went to the zoo", it doesn't get lost.
+# It felt more natural to me for the text to follow "personal-log" rather than hit enter before typing. 
+# I found myself accidentally doing that in the prototype version, which did not consume the arguments as text.
 vim -c "normal I$input_text" -y "$log_tmp"
 
+# Strip leading and trailing whitespace, and add a newline at the end.
 cat "$log_tmp" \
     | sed -zE 's/^\s*//g' \
     | sed -zE 's/\s*$/\n/g' \
     | tee "$log_tmp" >/dev/null 2>&1
 
+# Don't add empty entries
 if ! grep -q '[^[:space:]]' "$log_tmp"; then
     echo "No log entry created." >&2
     exit 1
 fi
 
-canonical_timezone="$(timedatectl show -p Timezone --value)"
-timestamp="$(date +"[%-l:%M %p | %Z | $canonical_timezone]")"
+timestamp="$(date +"[%-l:%M %p | $(get_timezone)]")"
 datestamp="$(date +'[[ %A, %B %d %Y ]]')"
 
 {
+    # Small optimization to search from the end of the file, because today's date will be closer to the end
+    # Future optimization - if the last date stamp is before today, no need to keep searching
     if ! tac "$log_file" | grep -Fq "$datestamp" 2>/dev/null; then
         printf '\n=== %s ===\n' "$datestamp"
     fi
 
+    # Always output the timestamp. It's good to know what time of day you made the entry
     printf '\n%s\n' "$timestamp" 
 
+    # Finally, the log entry itself
     cat "$log_tmp"
-} | tee -a "$log_file"
+} | tee -a "$log_file" # and append it to the log file
 exit 0
