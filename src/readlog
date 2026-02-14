@@ -1,2 +1,3 @@
 #!/bin/bash
-less +G "$PERSONAL_LOG" "$@"
+log_file="${PERSONAL_LOG:-$HOME/Documents/personal-log.txt}"
+less +G "$log_file" "$@"

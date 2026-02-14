@@ -48,6 +48,11 @@ function get_timezone() {
     fi
 }
 
+# see https://superuser.com/questions/737247/get-last-modified-date-of-file-in-linux#comment2543695_1245986
+# reportedly works on OSX, and tested to work on Arch
+function get_modified_time() {
+    date -r "$1" -u +"%Y-%m-%dT%H:%M:%SZ"
+}
 
 # The arguments are added as text to the beginning of the file, so that when you type 
 # "personal-log I went to the zoo", it doesn't get lost.
@@ -57,13 +62,13 @@ echo "$input_text" > "$log_tmp"
 
 # set the modified time to the distant past so we know if the user saved it 
 TZ=UTC touch -a -m -t 197001010000 "$log_tmp" 
-modified_time="$(date -Im -r "$log_tmp")"
+modified_time="$(get_modified_time "$log_tmp")"
 
 # Vim in easy (evim) mode is more user-friendly for quick text entry.
 # "normal G$ moves to the end of the pre-filled text, and "normal a " adds a space to the buffer so a quit will prompt to save
 vim -c "normal G$" -c "normal a " -y "$log_tmp"
 
-if [ "$(date -Im -r "$log_tmp")" == "$modified_time" ]; then
+if [ "$(get_modified_time "$log_tmp")" == "$modified_time" ]; then
     echo "No log entry created." >&2
     exit 1
 fi
