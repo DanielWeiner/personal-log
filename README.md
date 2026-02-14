@@ -1,19 +1,33 @@
 # personal-log
 A command-line tool to jot things down. Use it for notes, journaling, anything you'd use a plain text file for.
 
-## Depenencies
-- [less](https://www.gnu.org/software/less/)
-- [vim](https://www.vim.org/)
-- [makepkg](https://wiki.archlinux.org/title/Makepkg) (for installation)
-
 ## Note
-This project was built and tested on Arch Linux, so your mileage may vary on other platforms. It should work on any Unix-like system with the above dependencies, but I haven't tested it on anything else. You might need to manually install the scripts and set the `PERSONAL_LOG` environment variable if you're not on Arch Linux.
+This project was built and tested on Arch Linux, so your mileage may vary on other platforms. It should work on any Unix-like system with dependencies listed in the installation section, but I haven't tested it on anything else. You might need to manually install the scripts and set the `PERSONAL_LOG` environment variable if you're not on Arch Linux.
 
 ## Installation
+
+#### Arch Linux
+
+Clone the repo and install the package using `makepkg`:
+
 ```bash
 git clone https://github.com/DanielWeiner/personal-log.git
 cd personal-log
 makepkg -si .
+```
+
+#### Other distros
+Ensure the following dependencies are installed:
+
+- [less](https://www.gnu.org/software/less/)
+- [perl](https://www.perl.org/)
+- [vim](https://www.vim.org/)
+
+Then clone the repo an install the scripts using the provided `Makefile`:
+```
+git clone https://github.com/DanielWeiner/personal-log.git
+cd personal-log
+make install
 ```
 
 ## Usage
@@ -37,6 +51,12 @@ readlog
 ```
 
 This opens the personal log file in `less`, scrolled to the end. You may also append `less` arguments to the command.
+
+## Uninstallation
+To uninstall, run the following command:
+```bash
+personal-log --uninstall
+```
 
 ## Disclaimer
 

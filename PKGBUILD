@@ -3,7 +3,7 @@ pkgver=0.1.0
 pkgrel=1
 pkgdesc="A command-line tool to jot things down. Use it for notes, journaling, anything you'd use a plain text file for."
 arch=(any)
-depends=(less vim)
+depends=(less vim perl)
 package() {
 	mkdir -p "$pkgdir/usr/local"
     mkdir -p "$pkgdir/etc/profile.d"

@@ -2,13 +2,30 @@
 set -euo pipefail
 
 log_tmp="$(mktemp /tmp/personal-log.tmp.XXXXXX)"
-log_file="$PERSONAL_LOG"
+log_file="${PERSONAL_LOG:-$HOME/Documents/personal-log.txt}"
 timestamp=
 datestamp=
 input_text="$*"
 modified_time=
 
 trap 'rm -f "$log_tmp"' EXIT
+
+if [ "${1:-}" == "--uninstall" ]; then
+    echo "Uninstalling personal-log..."
+    if command -v pacman >/dev/null 2>&1 && pacman -Q personal-log >/dev/null 2>&1; then
+        sudo pacman -R personal-log
+        exit 0
+    fi
+
+    sudo rm -f /usr/local/bin/searchlog
+    sudo rm -f /usr/local/bin/readlog
+    sudo rm -f /etc/profile.d/personal-log-env.sh
+    sudo rm -f /usr/local/bin/personal-log
+
+    echo "personal-log uninstalled successfully."
+    exit 0
+fi
+
 mkdir -p "$(dirname "$log_file")"
 touch "$log_file"
 
@@ -20,7 +37,7 @@ function get_timezone() {
 
     # some systems symlink /etc/localtime to the actual timezone file, like Arch
     if [ -L /etc/localtime ]; then
-        printf ' | %s' "$(readlink -f /etc/localtime | cut -d/ -f5-)"
+        printf ' | %s' "$(readlink -f /etc/localtime | sed 's|.*/zoneinfo/||')"
     # some systems have the timezone in /etc/timezone, like Debian distros
     elif [ -f /etc/timezone ]; then
         printf ' | %s' "$(cat /etc/timezone)"
@@ -37,21 +54,19 @@ function get_timezone() {
 # It felt more natural to me for the text to follow "personal-log" rather than hit enter before typing. 
 # I found myself accidentally doing that in the prototype version, which did not consume the arguments as text.
 echo "$input_text" > "$log_tmp"
-modified_time="$(stat -c %Y "$log_tmp")"
+
+# set the modified time to the distant past so we know if the user saved it 
+TZ=UTC touch -a -m -t 197001010000 "$log_tmp" 
+modified_time="$(date -Im -r "$log_tmp")"
 
 # Vim in easy (evim) mode is more user-friendly for quick text entry.
-vim -c "normal Go" -y "$log_tmp"
+# "normal G$ moves to the end of the pre-filled text, and "normal a " adds a space to the buffer so a quit will prompt to save
+vim -c "normal G$" -c "normal a " -y "$log_tmp"
 
-if [ "$(stat -c %Y "$log_tmp")" -eq "$modified_time" ]; then
+if [ "$(date -Im -r "$log_tmp")" == "$modified_time" ]; then
     echo "No log entry created." >&2
     exit 1
 fi
-
-# Strip leading and trailing whitespace, and add a newline at the end.
-cat "$log_tmp" \
-    | sed -zE 's/^\s*//g' \
-    | sed -zE 's/\s*$/\n/g' \
-    | tee "$log_tmp" >/dev/null 2>&1
 
 # Don't add empty entries
 if ! grep -q '[^[:space:]]' "$log_tmp"; then
@@ -59,15 +74,20 @@ if ! grep -q '[^[:space:]]' "$log_tmp"; then
     exit 1
 fi
 
+# Strip leading and trailing whitespace, and add a newline at the end
+perl -0777 -i -pe 's/^\s+//; s/\s+$//' "$log_tmp"
+printf '\n' >> "$log_tmp"
+
 timestamp="$(date +"[%-l:%M %p | $(get_timezone)]")"
 datestamp="$(date +'[[ %A, %B %d %Y ]]')"
 
 {
-    # Small optimization to search from the end of the file, because today's date will be closer to the end
-    # Future optimization - if the last date stamp is before today, no need to keep searching
-    if ! tac "$log_file" | grep -Fq "$datestamp" 2>/dev/null; then
-        printf '\n=== %s ===\n' "$datestamp"
+    # Future optimization - search from the end, if the last date stamp is before today, no need to keep searching
+    if ! grep -Fq "$datestamp" "$log_file" 2>/dev/null; then
+        [ -s "$log_file" ] && printf '\n'
+        printf '=== %s ===\n' "$datestamp"
     fi
+    echo "date done"
 
     # Always output the timestamp. It's good to know what time of day you made the entry
     printf '\n%s\n' "$timestamp" 
