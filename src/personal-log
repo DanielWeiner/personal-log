@@ -88,15 +88,14 @@ if [ "$(get_modified_time "$log_tmp")" == "$modified_time" ]; then
     exit 1
 fi
 
+# Strip leading and trailing whitespace, and add a newline at the end
+perl -0777 -i -pe 's/^\s+//; s/\s*$/\n/' "$log_tmp"
+
 # Don't add empty entries
 if ! grep -q '[^[:space:]]' "$log_tmp"; then
     echo "No log entry created." >&2
     exit 1
 fi
-
-# Strip leading and trailing whitespace, and add a newline at the end
-perl -0777 -i -pe 's/^\s+//; s/\s+$//' "$log_tmp"
-printf '\n' >> "$log_tmp"
 
 timestamp="$(date +"[%-l:%M %p | $(get_timezone)]")"
 datestamp="$(date +'[[ %A, %B %d %Y ]]')"
