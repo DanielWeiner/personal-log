@@ -48,10 +48,25 @@ function get_timezone() {
     fi
 }
 
-# see https://superuser.com/questions/737247/get-last-modified-date-of-file-in-linux#comment2543695_1245986
-# reportedly works on OSX, and tested to work on Arch
+# get a file's modified time in epoch seconds
 function get_modified_time() {
-    date -r "$1" -u +"%Y-%m-%dT%H:%M:%SZ"
+    local file="$1"
+    local timestamp
+    
+    # GNU stat works on linux
+    if timestamp=$(stat -c "%Y" "$file" 2>/dev/null); then
+        echo "$timestamp"
+    # BSD stat works on macOS
+    elif timestamp=$(stat -f "%m" -t "%Y" "$file" 2>/dev/null); then
+        echo "$timestamp"
+    # fallback to date, which should work on most Unix-like systems
+    elif timestamp=$(date "+%s" -r "$file"  2>/dev/null); then
+        echo "$timestamp"  
+    else
+        echo "Unable to get modified time for $file" >&2
+        return 1
+    fi
+    return 0
 }
 
 # The arguments are added as text to the beginning of the file, so that when you type 
